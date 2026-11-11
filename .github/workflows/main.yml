@@ -1,4 +1,3 @@
-
 name: Forlent Sky - Build APK
 
 on:
@@ -28,12 +27,26 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      - name: Extract project
+        run: |
+          unzip -q ForlentSky-Native-6.0.0.zip -d native
+
       - name: Build APK
-        run: gradle --no-daemon assembleDebug
+        run: |
+          PROJECT_DIR="$(find native -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit | xargs -r dirname)"
+
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "ERRO: Nenhum projeto Gradle encontrado dentro do ZIP."
+            find native -maxdepth 5 -type f
+            exit 1
+          fi
+
+          echo "Projeto encontrado em: $PROJECT_DIR"
+          gradle --no-daemon -p "$PROJECT_DIR" assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Forlent-Sky-Native-6.0.0
-          path: app/build/outputs/apk/debug/*.apk
+          path: native/**/build/outputs/apk/debug/*.apk
           if-no-files-found: error
